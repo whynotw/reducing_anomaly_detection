@@ -82,15 +82,6 @@ class ReducingImageProcess():
                 self.label_total[j,i,0] = count
                 count += 1
 
-    #def _get_knn_result_for_single_pixel(self,j,i):
-    #    self.knn.train(self.data_train,cv2.ml.ROW_SAMPLE,self.label_train)
-    #    local = self.data_total[j,i,:].reshape(1,-1).astype(np.float32)
-    #    ret, results, neighbours, distances = self.knn.findNearest(local,self.number_k)
-    #    neighbours = neighbours[0].astype(np.int64)
-    #    distances = distances[0]
-    #    distances -= distances[0]
-    #    return neighbours, distances
-
     def _get_knn_results(self):
         tmp = self.data_total.reshape((-1,self.dim_data)).astype(np.float32)
         self.knn.train(tmp,cv2.ml.ROW_SAMPLE,self.label_total.reshape(-1,1))
@@ -98,25 +89,11 @@ class ReducingImageProcess():
         time0 = time.time()
         ret, results, neighbours, distances = self.knn.findNearest(tmp0.reshape(1,self.dim_data),1)
         time_try = time.time()-time0
-        print(time_try*tmp.shape[0])
+        print("expected time: %.0f s"%(time_try*tmp.shape[0]))
         ret, results, neighbours, distances = self.knn.findNearest(tmp,self.size_filter**2+self.number_k)
         del tmp
         neighbours = neighbours.astype(np.int64)
         return neighbours, distances
-
-    #def _ignore_myself(self,j,i):
-    #    #self.data_train = self.data_total.copy().reshape((-1,self.dim_data)).astype(np.float32)
-    #    #self.label_train = self.label_total.reshape((-1,1))
-
-    #    x0 = self.stride*i
-    #    y0 = self.stride*j
-    #    x1 = x0+self.size_filter
-    #    y1 = y0+self.size_filter
-
-    #    mask = (self.x0_data>x1)|(self.x1_data<x0)|(self.y0_data>y1)|(self.y1_data<y0)
-    #    self.label_train = self.label_total[mask].reshape((-1,1))
-    #    mask = np.stack((mask,)*self.dim_data,axis=-1)
-    #    self.data_train = self.data_total[mask].reshape((-1,self.dim_data)).astype(np.float32)
 
     def _gather_patches(self):
         count = 0
@@ -164,12 +141,10 @@ class ReducingImageProcess():
 
 if __name__ == "__main__":
 
-    #imagename = "red_in_green02.jpg"
-    #imagename = "/data/dataset/20190812_PCB_defect/AIO/9.jpg"
-    imagename = "/data/dataset/20190812_PCB_defect/CAD/CROP_LT_30.745800,31.951400_RB_32.170800,33.851400-defIdx-1_pasteBox_(274, 424, 285, 430)-0717_163619.438709.png"
+    imagename = "data/red_in_green.jpg"
     image_origin = cv2.imread(imagename)
     height, width = image_origin.shape[:2]
-    scale_reduction = 0.5
+    scale_reduction = 1.
     image_origin = cv2.resize(image_origin,(int( width*scale_reduction),
                                             int(height*scale_reduction)))
     cv2.imshow("image0",image_origin)
@@ -183,7 +158,7 @@ if __name__ == "__main__":
     print("size of reduced image : %d x %d"%(reducing.height_reduced,reducing.width_reduced))
 
     reducing()
-    print("process time: %f s"%(reducing.time_process))
+    print(" process time: %.0f s"%(reducing.time_process))
 
     cv2.imshow("image1",reducing.image_reducing)
     cv2.imshow("residual",reducing.image_residual)
